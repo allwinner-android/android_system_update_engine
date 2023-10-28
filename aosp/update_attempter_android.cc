@@ -52,6 +52,7 @@
 #include "update_engine/payload_consumer/postinstall_runner_action.h"
 #include "update_engine/update_boot_flags_action.h"
 #include "update_engine/update_status_utils.h"
+#include "custom_install_runner_action.h"
 
 #ifndef _UE_SIDELOAD
 // Do not include support for external HTTP(s) urls when building
@@ -506,6 +507,8 @@ bool UpdateAttempterAndroid::VerifyPayloadApplicable(
 
   BootControlInterface::Slot current_slot = GetCurrentSlot();
   for (const PartitionUpdate& partition : manifest.partitions()) {
+    if (partition.partition_name() == "custom")
+      continue;
     if (!partition.has_old_partition_info())
       continue;
     string partition_path;
@@ -622,6 +625,10 @@ void UpdateAttempterAndroid::ActionCompleted(ActionProcessor* processor,
   } else if (type == FilesystemVerifierAction::StaticType()) {
     SetStatusAndNotify(UpdateStatus::FINALIZING);
     prefs_->SetBoolean(kPrefsVerityWritten, true);
+  }
+
+  if (type == CustomInstallRunnerAction::StaticType()) {
+    LOG(INFO) << "Scheduling CustomInstallRunnerAction start.";
   }
 }
 
@@ -768,12 +775,16 @@ void UpdateAttempterAndroid::BuildUpdateActions(HttpFetcher* fetcher) {
   filesystem_verifier_action->set_delegate(this);
   postinstall_runner_action->set_delegate(this);
 
+  auto custom_install_runner_action =
+       std::make_unique<CustomInstallRunnerAction>();
+
   // Bond them together. We have to use the leaf-types when calling
   // BondActions().
   BondActions(install_plan_action.get(), download_action.get());
   BondActions(download_action.get(), filesystem_verifier_action.get());
   BondActions(filesystem_verifier_action.get(),
               postinstall_runner_action.get());
+  BondActions(postinstall_runner_action.get(),custom_install_runner_action.get());
 
   processor_->EnqueueAction(std::move(update_boot_flags_action));
   processor_->EnqueueAction(std::move(cleanup_previous_update_action));
@@ -781,6 +792,7 @@ void UpdateAttempterAndroid::BuildUpdateActions(HttpFetcher* fetcher) {
   processor_->EnqueueAction(std::move(download_action));
   processor_->EnqueueAction(std::move(filesystem_verifier_action));
   processor_->EnqueueAction(std::move(postinstall_runner_action));
+  processor_->EnqueueAction(std::move(custom_install_runner_action));
 }
 
 bool UpdateAttempterAndroid::WriteUpdateCompletedMarker() {

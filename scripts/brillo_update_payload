@@ -524,6 +524,7 @@ extract_image_brillo() {
   else
     warn "No ab_partitions.txt found. Using default."
   fi
+  partitions=(${partitions[*]} "custom")
   echo "List of A/B partitions for ${partitions_array}: ${partitions[@]}"
 
   if [[ -n "${partitions_order}" ]]; then

@@ -99,7 +99,7 @@ FileDescriptorPtr OpenFile(const char* path,
     fd = FileDescriptorPtr(new CachedFileDescriptor(fd, kCacheSize));
     LOG(INFO) << "Caching writes.";
   }
-  if (!fd->Open(path, mode, 000)) {
+  if (!fd->Open(path, mode, (mode & O_CREAT) == O_CREAT ? 0666 : 000)) {
     *err = errno;
     PLOG(ERROR) << "Unable to open file " << path;
     return nullptr;
@@ -291,6 +291,8 @@ bool PartitionWriter::Init(const InstallPlan* install_plan,
   int flags = O_RDWR;
   if (!interactive_)
     flags |= O_DSYNC;
+  if (target_path_.find("/dev/block/") != 0)
+    flags |= O_CREAT;
 
   LOG(INFO) << "Opening " << target_path_ << " partition with"
             << (interactive_ ? "out" : "") << " O_DSYNC";

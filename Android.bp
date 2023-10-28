@@ -362,12 +362,22 @@ cc_library_static {
 
     // TODO(deymo): Remove external/cros/system_api/dbus once the strings are moved
     // out of the DBus interface.
-    include_dirs: ["external/cros/system_api/dbus"],
+    include_dirs: [
+        "external/cros/system_api/dbus",
+        "bootable/recovery/otautil/",
+    ],
 
     aidl: {
         local_include_dirs: ["binder_bindings"],
         export_aidl_headers: true,
     },
+
+    header_libs: ["update_custom_headers"],
+
+    static_libs: [
+        "update_custom",
+        "libotautil",
+    ],
 
     srcs: [
         ":libupdate_engine_aidl",
@@ -387,6 +397,7 @@ cc_library_static {
         "metrics_utils.cc",
         "update_boot_flags_action.cc",
         "update_status_utils.cc",
+        "custom_install_runner_action.cc",
     ],
 }
 
@@ -400,7 +411,13 @@ cc_binary {
         "libupdate_engine_android_exports",
     ],
 
-    static_libs: ["libupdate_engine_android"],
+    header_libs: ["update_custom_headers"],
+
+    static_libs: [
+        "libupdate_engine_android",
+        "update_custom",
+        "libotautil",
+    ],
     required: [
         "cacerts_google",
         "otacerts",
@@ -429,7 +446,10 @@ cc_binary {
     // TODO(deymo): Remove external/cros/system_api/dbus once the strings are moved
     // out of the DBus interface.
     include_dirs: ["external/cros/system_api/dbus"],
-    header_libs: ["libgtest_prod_headers"],
+    header_libs: [
+        "libgtest_prod_headers",
+        "update_custom_headers",
+    ],
 
     srcs: [
         "aosp/hardware_android.cc",
@@ -443,6 +463,7 @@ cc_binary {
         "metrics_utils.cc",
         "update_boot_flags_action.cc",
         "update_status_utils.cc",
+        "custom_install_runner_action.cc",
     ],
 
     // Use commonly used shared libraries. libprotobuf-cpp-lite.so is filtered out,
@@ -468,7 +489,10 @@ cc_binary {
         "libbrillo-stream",
         "libbrillo",
         "libchrome",
+        "update_custom",
+        "libotautil",
     ],
+
     target: {
         recovery: {
             exclude_shared_libs: [
@@ -831,6 +855,7 @@ cc_test {
         "payload_generator/zip_unittest.cc",
         "testrunner.cc",
         "update_status_utils_unittest.cc",
+        "custom_install_runner_action_unittest.cc",
     ],
 }
 

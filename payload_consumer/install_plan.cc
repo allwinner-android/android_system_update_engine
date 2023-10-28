@@ -154,7 +154,7 @@ bool InstallPlan::LoadPartitionsFromSlots(BootControlInterface* boot_control) {
   for (Partition& partition : partitions) {
     if (source_slot != BootControlInterface::kInvalidSlot &&
         partition.source_size > 0) {
-      TEST_AND_RETURN_FALSE(boot_control->GetPartitionDevice(
+      result = static_cast<bool>(boot_control->GetPartitionDevice(
           partition.name, source_slot, &partition.source_path));
     } else {
       partition.source_path.clear();
@@ -162,6 +162,15 @@ bool InstallPlan::LoadPartitionsFromSlots(BootControlInterface* boot_control) {
 
     if (target_slot != BootControlInterface::kInvalidSlot &&
         partition.target_size > 0) {
+      if (partition.name == "custom") {
+#ifdef __ANDROID_RECOVERY__
+        partition.target_path = "/tmp/custom.zip";
+#else
+        partition.target_path = "/data/ota_package/custom.zip";
+#endif
+        result = true;
+        continue;
+      }
       auto device = boot_control->GetPartitionDevice(
           partition.name, target_slot, source_slot);
       TEST_AND_RETURN_FALSE(device.has_value());

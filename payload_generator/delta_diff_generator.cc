@@ -196,8 +196,9 @@ bool GenerateUpdatePayloadFile(const PayloadGenerationConfig& config,
     base::DelegateSimpleThreadPool thread_pool{"partition-thread-pool",
                                                thread_count};
     for (size_t i = 0; i < config.target.partitions.size(); i++) {
+      bool no_delta = config.target.partitions[i].name == "custom";
       const PartitionConfig& old_part =
-          config.is_delta ? config.source.partitions[i] : empty_part;
+          (config.is_delta && !no_delta) ? config.source.partitions[i] : empty_part;
       const PartitionConfig& new_part = config.target.partitions[i];
       LOG(INFO) << "Partition name: " << new_part.name;
       LOG(INFO) << "Partition size: " << new_part.size;
@@ -233,8 +234,9 @@ bool GenerateUpdatePayloadFile(const PayloadGenerationConfig& config,
     thread_pool.JoinAll();
 
     for (size_t i = 0; i < config.target.partitions.size(); i++) {
+      bool no_delta = config.target.partitions[i].name == "custom";
       const PartitionConfig& old_part =
-          config.is_delta ? config.source.partitions[i] : empty_part;
+          (config.is_delta && !no_delta) ? config.source.partitions[i] : empty_part;
       const PartitionConfig& new_part = config.target.partitions[i];
       TEST_AND_RETURN_FALSE(
           payload.AddPartition(old_part,
